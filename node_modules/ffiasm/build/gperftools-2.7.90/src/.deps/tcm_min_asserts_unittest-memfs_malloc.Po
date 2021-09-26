@@ -1,0 +1,1 @@
+src/tcm_min_asserts_unittest-memfs_malloc.o: src/memfs_malloc.cc
