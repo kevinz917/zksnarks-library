@@ -17,7 +17,7 @@ template InArea() {
     component gt2 = LessEqThan(9);
     gt2.in[0] <== location[0];
     gt2.in[1] <== longitude[1];
-    gt2.out === 1;
+    gt2.out === 1; // bool?
 
     // min latitude check
     component lt1 = GreaterEqThan(9);
