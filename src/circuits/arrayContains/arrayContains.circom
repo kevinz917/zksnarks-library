@@ -1,5 +1,5 @@
-include "../../node_modules/circomlib/circuits/comparators.circom";
-include "../../node_modules/circomlib/circuits/gates.circom";
+include "../node_modules/circomlib/circuits/comparators.circom";
+include "../node_modules/circomlib/circuits/gates.circom";
 
 // searches whether a grid can be traversed from point A to point B
 // applications: prove that a player has traversed from point 1 to point b without revealing location
