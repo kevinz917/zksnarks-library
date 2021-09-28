@@ -3,9 +3,12 @@
 3,5,0,main.cards[2]
 4,6,0,main.cards[3]
 5,7,0,main.cards[4]
-6,2,0,main.hasDouble
+6,2,0,main.number
 7,1,0,main.out
-8,8,0,main.isTrue
-9,9,1,main.or2.a
-10,8,1,main.or2.b
-11,1,1,main.or2.out
+8,10,0,main.sum
+9,10,1,main.eq.in[0]
+10,2,1,main.eq.in[1]
+11,1,1,main.eq.out
+12,8,2,main.eq.isz.in
+13,1,2,main.eq.isz.out
+14,9,2,main.eq.isz.inv
