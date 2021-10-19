@@ -1,37 +1,46 @@
-include "../../node_modules/circomlib/circuits/comparators.circom";
+include "../node_modules/circomlib/circuits/comparators.circom";
 
-// searches whether a grid can be traversed from point A to point B
-// applications: prove that a player has traversed from point 1 to point b without revealing location
-// TODO: Copy code from main.circom to here
-// TODO: Figure out better compilation workflow
+// given a 2d array, prove that one knows the number of same elements between two 2d arrays. 
+template arraySum(ARR_SIZE) {
+    // public inputs
+    signal input publicGuess[ARR_SIZE][ARR_SIZE];
+    signal input similarities;
 
-template BFS() {
-    signal input map[4][4]; // 4 by 4 grid. 1 denotes obstacle, 0 denotes traversable path
-    // signal private input start[2]; // (x, y) of start location
-    // signal private input end[2];  // (x, y) of end location
-    signal private input numberOfObstacles;
+    // private inputs
+    signal private input privateSolution[ARR_SIZE][ARR_SIZE];
 
-    signal output out; // 0 or 1
+    // output
+    signal output out;
 
-    var obstacles = 0;
-    for(var i=0; i<4; i++){
-        for(var j=0; j<4; j++){
-            if(map[i][j] == 1){
-                obstacles++;
-            }
+    // components
+    component eqs[ARR_SIZE][ARR_SIZE];
+
+    var eqMap[ARR_SIZE][ARR_SIZE];
+    
+    for(var i=0; i<ARR_SIZE; i++){
+        for(var j=0; j<ARR_SIZE; j++){
+            eqs[i][j] = IsEqual()
+            eqs[i][j].in[0] <== publicGuess[i][j];
+            eqs[i][j].in[1] <== privateSolution[i][j];
+            eqMap[i][j] = eqs[i][j].out;
         }
     }
 
-    component validity = IsEqual(); // instantiate an imported template
-    validity.in[0] <== obstacles;
-    validity.in[1] <== numberOfObstacles;
-    validity.out === 1;
-    
-    log(validity.out);
-    validity.out ==> out;
+    var eqSum = 0;
+
+    for(var i=0; i<ARR_SIZE; i++) {
+        for(var j=0; j<ARR_SIZE; j++){
+            eqSum += eqMap[i][j]
+        }
+    }
+
+    component sumEq = IsEqual();
+    sumEq.in[0] <== eqSum;
+    sumEq.in[1] <== similarities;
+    sumEq.out === 1;
+
+    out <-- sumEq.out;
     out === 1;
 }
 
-
-
-component main = BFS();
+component main = arraySum(5);
