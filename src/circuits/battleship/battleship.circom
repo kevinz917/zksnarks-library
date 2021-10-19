@@ -2,6 +2,19 @@ include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/gates.circom"
 include "../node_modules/circomlib/circuits/mimcsponge.circom"
 
+template MapHash(n) {
+    signal input ins[n];
+    signal output out;
+
+    component msg_hasher = MiMCSponge(n, 220, 1);
+    for (var i=0; i<n; i++) {
+        msg_hasher.ins[i] <== ins[i];
+    }
+    msg_hasher.k <== 0;
+
+    out <== msg_hasher.outs[0];
+}
+
 // given a 2d array, prove that one knows the number of same elements between two 2d arrays. 
 template arraySum(ARR_SIZE, TOTAL_SHIP_UNIT_NUM) {
 
@@ -10,7 +23,7 @@ template arraySum(ARR_SIZE, TOTAL_SHIP_UNIT_NUM) {
 
     signal private input privateSolution[ARR_SIZE][ARR_SIZE];
 
-    signal output pub;
+    signal output out;
 
     component eqs[ARR_SIZE][ARR_SIZE];
     var eqMap[ARR_SIZE][ARR_SIZE];
@@ -46,36 +59,20 @@ template arraySum(ARR_SIZE, TOTAL_SHIP_UNIT_NUM) {
 
     // verify that the hash of your private map matches pubMapHash
     // to make sure one didn't tamper with their map between rounds
-    component mimc = MiMCSponge(ARR_SIZE*ARR_SIZE, 10, 1); // should be 220
+    // TODO: Downloaod bigger power of TAU to accomodate for bigger board sizes
+    component mimc = MiMCSponge(ARR_SIZE*ARR_SIZE, 220, 1);
 
-    // hash private map
     var counter = 0;
     for(var i=0; i<ARR_SIZE; i++) {
         for(var j=0; j<ARR_SIZE; j++){
             mimc.ins[counter] <== privateSolution[i][j];
+            counter += 1;
         }
     }
 
     mimc.k <== 0;
 
-    log(mimc.outs[0]);
-
-    pub <== mimc.outs[0];
-
-    // signal pubHash;
-    // pubHash <== pubMapHash;
-
-    // var pubHash = pubMapHash;
-
-    // should this component be done in smart contracts? read up on ZK logic
-    // verify that the calculate hash is equal to the given map hash
-    // component is_hash_equal = IsEqual();
-    // is_hash_equal.in[0] <== mimc.outs[0];
-    // is_hash_equal.in[1] <== pubHash;
-
-    // log(is_hash_equal.out);
-
-    // is_hash_equal.out === 1;
+    out <== mimc.outs[0];
 }
 
-component main = arraySum(3, 4);
+component main = arraySum(2, 3);
