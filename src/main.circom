@@ -1,44 +1,51 @@
 include "../node_modules/circomlib/circuits/comparators.circom";
-include "../node_modules/circomlib/circuits/bitify.circom";
-include "../node_modules/circomlib/circuits/mux1.circom";
 
-// searches whether a grid can be traversed from point A to point B
-// applications: prove that a player has traversed from point 1 to point b without revealing location
-// TODO: Copy code from main.circom to here
-// TODO: Figure out better compilation workflow
+// given a 2d array, prove that one knows the sum of the array
+template arraySum(ARR_SIZE) {
+    // public inputs
+    signal input publicGuess[ARR_SIZE][ARR_SIZE];
+    signal input similarities;
 
-template BFS() {
-    signal input map[4][4]; // 4 by 4 grid. 1 denotes obstacle, 0 denotes traversable path
-    signal private input numberOfObstacles;
+    // private inputs
+    signal private input privateSolution[ARR_SIZE][ARR_SIZE];
 
+    // output
     signal output out;
 
-    signal sumS;
+    component eqs[ARR_SIZE][ARR_SIZE];
+    var eqMap[ARR_SIZE][ARR_SIZE];
 
-    var obstacles = 0;
-
-    component is_obstacle[4][4];
+    for(var i =0; i < ARR_SIZE; i++){
+        for(var j=0; j < ARR_SIZE; j++){
+            eqs[i][j] = IsEqual()
+        }
+    }
     
-    for(var i=0; i<4; i++){
-      for(var j=0; j<4; j++){
-        is_obstacle[i][j] = IsEqual();
-        is_obstacle[i][j].in[0] <== map[i][j];
-        is_obstacle[i][j].in[1] <== 1;
-        obstacles += is_obstacle[i][j].out;
-      }
+    for(var i=0; i<ARR_SIZE; i++){
+        for(var j=0; j<ARR_SIZE; j++){
+            eqs[i][j].in[0] <== publicGuess[i][j];
+            eqs[i][j].in[1] <== privateSolution[i][j];
+            eqMap[i][j] = eqs[i][j].out;
+        }
     }
 
-    sumS <== obstacles;
+    var eqSum = 0;
 
-    component validity = IsEqual();
-    validity.in[0] <== sumS;
-    validity.in[1] <== numberOfObstacles;
-    validity.out === 1;
-    
-    out <-- validity.out;
+    for(var i=0; i<ARR_SIZE; i++) {
+        for(var j=0; j<ARR_SIZE; j++){
+            eqSum += eqMap[i][j]
+        }
+    }
+
+    log(eqSum)
+
+    component eq = IsEqual();
+    eq.in[0] <== eqSum;
+    eq.in[1] <== similarities;
+    eq.out === 1;
+
+    out <-- eq.out;
     out === 1;
 }
 
-
-
-component main = BFS();
+component main = arraySum(5);

@@ -14,4 +14,4 @@ snarkjs groth16 verify verification_key.json public.json proof.json
 
 ## Download the P of Tau ceremony file (figure out what this actually does lmao)
 
-wget https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_10.ptau
+wget https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_15.ptau
