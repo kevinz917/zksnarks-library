@@ -2,7 +2,7 @@
 
 circom main.circom --r1cs --wasm --sym
 
-snarkjs zkey new main.r1cs powersOfTau28_hez_final_15.ptau circuit_0000.zkey
+snarkjs zkey new main.r1cs ./powerOfTau/powersOfTau28_hez_final_15.ptau circuit_0000.zkey
 snarkjs zkey contribute circuit_0000.zkey circuit_final.zkey
 snarkjs zkey export verificationkey circuit_final.zkey verification_key.json
 

@@ -9,7 +9,7 @@ include "../node_modules/circomlib/circuits/mimcsponge.circom"
 
 // apply MiMC hash to attributes of the character
 template hashCharacter() {
-    signal input attribute[3];
+    signal private input attribute[3];
     signal output out;
 
     component mimc = MiMCSponge(3, 220, 1);
@@ -22,10 +22,13 @@ template hashCharacter() {
     out <== mimc.outs[0];
 }
 
+// mint NFT. Users enter three attributes (private), which are stored locally in the browser. 
+// A hash of the NFT is created along with a ZK proof to show that the three attributes satisfy
+// a certain criteria.
 template mint(MAX_VAL) {
-    signal input attribute1;
-    signal input attribute2;
-    signal input attribute3;
+    signal private input attribute1;
+    signal private input attribute2;
+    signal private input attribute3;
 
     signal output out; // hashed value of attributes
 
@@ -45,14 +48,15 @@ template mint(MAX_VAL) {
     out <== cHash.out;
 }
 
-// users will be able to reveal partially the statistic of their NFT without revealing their own NFT
+// users will be able to partially reveal the statistic of their NFT without revealing their own NFT
 // ex: I want to reveal to other buyers that my NFT chararacters' attribute 1 value has
 // at least x points. This engages buyers and sellers in a fog of war auction. Buyers won't know 
 // exactly they're buying, but they know for certain some attributes at the same time, proven by zkSNARKs. 
+// TODO: Generate more of the same type of circuits. They serve as speculation vehicles essentially
 template revealAttribute(MIN_VAL) {
-    signal input attribute1;
-    signal input attribute2;
-    signal input attribute3;
+    signal private input attribute1;
+    signal private input attribute2;
+    signal private input attribute3;
 
     signal output out;
 
@@ -72,4 +76,21 @@ template revealAttribute(MIN_VAL) {
     out <== cHash.out;
 }
 
-component main = revealAttribute(1);
+// reveal NFT
+template revealNFT() {
+    signal input attribute1;
+    signal input attribute2;
+    signal input attribute3;
+
+    signal output out;
+
+    // hash attribute
+    component cHash = hashCharacter();
+    cHash.attribute[0] <== attribute1;
+    cHash.attribute[1] <== attribute2;
+    cHash.attribute[2] <== attribute3;
+
+    out <== cHash.out;
+}
+
+component main = revealNFT();
