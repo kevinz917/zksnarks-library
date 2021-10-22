@@ -57,7 +57,7 @@ template arraySum(ARR_SIZE, TOTAL_SHIP_UNIT_NUM) {
 
     is_guess_correct.out === 1;
 
-    // verify that the hash of your private map matches pubMapHash
+    // generate and verify the hash of your private map
     // to make sure one didn't tamper with their map between rounds
     // TODO: Downloaod bigger power of TAU to accomodate for bigger board sizes
     component mimc = MiMCSponge(ARR_SIZE*ARR_SIZE, 220, 1);
