@@ -1,1 +1,0 @@
-# zksnarks-library

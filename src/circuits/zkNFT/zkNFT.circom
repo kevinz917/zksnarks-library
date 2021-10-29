@@ -93,4 +93,4 @@ template revealNFT() {
     out <== cHash.out;
 }
 
-component main = revealNFT();
+component main = mint();

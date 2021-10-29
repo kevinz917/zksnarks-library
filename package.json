@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "test-circuit": "circom src/main.circom --r1cs --wasm --sym",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
