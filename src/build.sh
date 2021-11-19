@@ -11,7 +11,7 @@ function buildCircuit() {
         snarkjs groth16 verify verification_key.json public.json proof.json &&
         snarkjs zkey export solidityverifier circuit_final.zkey verifier.sol &&
         snarkjs generatecall >contractInput.js &&
-        cleanUp &&
+        # cleanUp &&
         echo "Finished compiling circuit!"
 
 }

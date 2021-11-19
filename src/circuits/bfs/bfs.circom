@@ -1,3 +1,4 @@
+include "../node_modules/circomlib/circuits/gates.circom"
 include "../node_modules/circomlib/circuits/comparators.circom";
 
 // given a 2d array, prove that one knows the number of same elements between two 2d arrays. 
