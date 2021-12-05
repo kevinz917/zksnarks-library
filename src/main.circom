@@ -2,54 +2,141 @@ include "../node_modules/circomlib/circuits/mimcsponge.circom"
 include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/gates.circom"
 
-template MiMCHash(){
-  signal input left;
-  signal input right;
-  signal output hash;
+/*
+  Inputs:
+  - hashes (pub) List of all user hashes
+  - msg (pub)
+  - secret
 
-  component hashFunc = MiMCSponge(2, 220, 1);
-  hashFunc.ins[0] <== left;
-  hashFunc.ins[1] <== right;
-  hashFunc.k <== 0;
-  hash <== hashFunc.outs[0];
-}
+  Intermediate values:
+  - x (supposed to be hash of secret)
+  
+  Output:
+  - msgAttestation
+  
+  Prove:
+  - mimc(secret) == x
+  - (x - hash1)(x - hash2)(x - hash3)... == 0. Basically a big loop for ORs.
+  - msgAttestation == mimc(msg, secret)
+*/
 
-// if s == 0 returns [in[0], in[1]]
-// if s == 1 returns [in[1], in[0]]
-template DualMux() {
-    signal input ins[2];
-    signal input s;
-    signal output out[2];
+template Main(GROUP_SIZE) {
+  signal private input secret;
+  signal input hashes[GROUP_SIZE];
+  signal input msg;
 
-    s * (1 - s) === 0
-    out[0] <== (ins[1] - ins[0])*s + ins[0];
-    out[1] <== (ins[0] - ins[1])*s + ins[1];
-}
+  signal userPub;
 
-template Main(DEPTH) {
-  signal input root; 
-  signal input leaf;
-  signal input merkleElements[DEPTH]; // ["1"]
-  signal input merklePath[DEPTH]; // ["1"] (meaning right hand side)
+  signal output msgAttestation;
 
-  component selectors[DEPTH];
-  component mimcHashs[DEPTH];
+  // MiMC hash of secret
+  component mimcSecret = MiMCSponge(1, 220, 1);
+  mimcSecret.ins[0] <== secret;
+  mimcSecret.k <== 0;
+  userPub <== mimcSecret.outs[0];
 
-  // initiate MiMC circuit
-  for(var i=0; i<DEPTH; i++){
-    // MUX selectors
-    selectors[i] = DualMux();
-    selectors[i].ins[0] <== i == 0? leaf : mimcHashs[i-1].hash;
-    selectors[i].ins[1] <== merkleElements[i];
-    selectors[i].s <== merklePath[i];
+  component eqs[GROUP_SIZE];
+  component is_hash_present[GROUP_SIZE];
 
-    // MiMC hash
-    mimcHashs[i] <== MiMCHash();
-    mimcHashs[i].left <== selectors[i].out[0];
-    mimcHashs[i].right <== selectors[i].out[1];
+  for(var i=0; i<GROUP_SIZE; i++){
+    eqs[i] = IsEqual();
+    eqs[i].in[0] <== userPub;
+    eqs[i].in[1] <== hashes[i];
+
+    is_hash_present[i] = OR();
   }
 
-  root === mimcHashs[DEPTH-1].hash;
+  // a big loop of ORs
+  for(var i=1; i<GROUP_SIZE; i++){
+    is_hash_present[i].a <== eqs[i].out;
+    is_hash_present[i].b <== i == 1 ? eqs[0].out : is_hash_present[i-1].out;
+  }
+
+  // assert that hash is present
+  is_hash_present[GROUP_SIZE-1].out === 1;
+  
+  // sign and return output message using user's secret
+  component mimcAttestation = MiMCSponge(2, 220, 1);
+  mimcAttestation.ins[0] <== msg;
+  mimcAttestation.ins[1] <== secret;
+  mimcAttestation.k <== 0;
+  msgAttestation <== mimcAttestation.outs[0];
 }
 
-component main = Main(2);
+//////
+// Inputs:
+//  - hash (pub)
+//  - msgAttestation (pub)
+//  - msg (pub)
+//  - secret
+ 
+// Outputs:
+//  - msgAttestation
+ 
+// Prove:
+//  - msgAttestation == mimc(msg, secret)
+//  - hash = mimc(secret)
+
+
+template RevealSigner(N) {
+    signal input hash;
+    signal input msg;
+    signal input msgAttestation;
+    signal private input secret;
+
+    // hash = mimc(secret)
+    component mimcHash = MiMCSponge(1, 220, 1);
+    mimcHash.ins[0] <== secret;
+    mimcHash.k <== 0;
+    hash === mimcHash.outs[0];
+
+    // msgAttestation !== mimc(msg, secret)
+    component mimcAttestation = MiMCSponge(2, 220, 1);
+    mimcAttestation.ins[0] <== msg;
+    mimcAttestation.ins[1] <== secret;
+    mimcAttestation.k <== 0;
+
+    msgAttestation === mimcAttestation.outs[0];
+}
+
+
+// denySignature
+
+// Inputs:
+//  - hash (pub)
+//  - msg (pub)
+//  - secret
+
+// Outputs:
+//  - msgAttestation 
+
+// Prove
+//  - msgAttestation != mimc(msg, secret)
+//  - hash = mimc(secret)
+
+template DenySignature() {
+    signal input hash;
+    signal input msgAttestation;
+    signal input msg;
+    signal private input secret;
+
+    // hash = mimc(secret)
+    component mimcHash = MiMCSponge(1, 220, 1);
+    mimcHash.ins[0] <== secret;
+    mimcHash.k <== 0;
+    hash === mimcHash.outs[0];
+
+     // msgAttestation == mimc(msg, secret)
+    component mimcAttestation = MiMCSponge(2, 220, 1);
+    mimcAttestation.ins[0] <== msg;
+    mimcAttestation.ins[1] <== secret;
+    mimcAttestation.k <== 0;
+  
+    component areMessagesEql = IsEqual();
+    areMessagesEql.in[0] <== msgAttestation;
+    areMessagesEql.in[1] <== mimcAttestation.outs[0];
+
+    areMessagesEql.out === 0;
+}
+
+component main = Main(40);

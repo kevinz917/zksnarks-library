@@ -35,7 +35,6 @@ template Main(GROUP_SIZE) {
   x <== mimcSecret.outs[0]; // MiMC hash of secret
 
   component eqs[GROUP_SIZE];
-  signal eqsRes[GROUP_SIZE];
 
   component is_hash_present[GROUP_SIZE];
   signal is_hash_present_final[GROUP_SIZE];
@@ -48,20 +47,20 @@ template Main(GROUP_SIZE) {
   for(var i=0; i<GROUP_SIZE; i++){
     eqs[i].in[0] <== x;
     eqs[i].in[1] <== hashes[i];
-    eqsRes[i] <== eqs[i].out;
   }
 
-  is_hash_present_final[0] <== eqsRes[0];
+  is_hash_present_final[0] <== eqs[0].out;
 
   // basically a big loop of ORs
   for(var i=1; i<GROUP_SIZE; i++){
-    is_hash_present[i].a <== eqsRes[i];
+    is_hash_present[i].a <== eqs[i].out;
     is_hash_present[i].b <== is_hash_present_final[i-1];
     is_hash_present_final[i] <== is_hash_present[i].out;
   }
 
   is_hash_present_final[GROUP_SIZE-1] === 1;
   
+  // mimc hash
   component mimcAttestation = MiMCSponge(2, 220, 1);
   mimcAttestation.ins[0] <== msg;
   mimcAttestation.ins[1] <== secret;
